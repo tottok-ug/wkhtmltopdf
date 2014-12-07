@@ -1,3 +1,9 @@
-[submodule "qt"]
-	path = qt
-	url = https://github.com/wkhtmltopdf/qt.git
+[submodule "qt/qtbase"]
+	path = qt/qtbase
+	url = https://github.com/wkhtmltopdf/qtbase.git
+	branch = wk_master
+
+[submodule "qt/qtwebkit"]
+	path = qt/qtwebkit
+	url = https://github.com/wkhtmltopdf/qtwebkit.git
+	branch = wk_master
