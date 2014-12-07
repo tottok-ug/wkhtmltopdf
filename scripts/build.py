@@ -346,7 +346,7 @@ DEPENDENT_LIBS = {
             'mingw-w64-cross-win*': {
                 'result': ['include/openssl/ssl.h', 'lib/libssl.a', 'lib/libcrypto.a'],
                 'commands': [
-                    'perl Configure --openssldir=%(destdir)s --cross-compile-prefix=%(mingw-w64)s- no-shared no-asm mingw64',
+                    'perl Configure --openssldir=%(destdir)s --cross-compile-prefix=%(mingw_w64)s- no-shared no-asm mingw64',
                     'make',
                     'make install_sw']
             }
@@ -372,7 +372,7 @@ DEPENDENT_LIBS = {
                     'include/zconf.h': 'zconf.h',
                     'lib/libz.a'     : 'libz.a'
                 },
-                'replace':  [('win32/Makefile.gcc', 'PREFIX =', 'PREFIX = %(mingw-w64)s-')],
+                'replace':  [('win32/Makefile.gcc', 'PREFIX =', 'PREFIX = %(mingw_w64)s-')],
                 'commands': ['make -f win32/Makefile.gcc']
             }
         }
@@ -405,9 +405,9 @@ DEPENDENT_LIBS = {
                 'replace': [
                     ('scripts/makefile.gcc', 'ZLIBINC = ../zlib', 'ZLIBINC = %(destdir)s/include'),
                     ('scripts/makefile.gcc', 'ZLIBLIB = ../zlib', 'ZLIBLIB = %(destdir)s/lib'),
-                    ('scripts/makefile.gcc', 'CC = gcc', 'CC = %(mingw-w64)s-gcc'),
-                    ('scripts/makefile.gcc', 'AR_RC = ar', 'AR_RC = %(mingw-w64)s-ar'),
-                    ('scripts/makefile.gcc', 'RANLIB = ranlib', 'RANLIB = %(mingw-w64)s-ranlib')],
+                    ('scripts/makefile.gcc', 'CC = gcc', 'CC = %(mingw_w64)s-gcc'),
+                    ('scripts/makefile.gcc', 'AR_RC = ar', 'AR_RC = %(mingw_w64)s-ar'),
+                    ('scripts/makefile.gcc', 'RANLIB = ranlib', 'RANLIB = %(mingw_w64)s-ranlib')],
                 'commands': ['make -f scripts/makefile.gcc libpng.a']
             },
             'osx-carbon-i386': {
@@ -448,7 +448,7 @@ DEPENDENT_LIBS = {
             'mingw-w64-cross-win*': {
                 'result': ['include/jpeglib.h', 'include/jmorecfg.h', 'include/jerror.h', 'include/jconfig.h', 'lib/libjpeg.a'],
                 'commands': [
-                    './configure --host=%(mingw-w64)s --disable-shared --prefix=%(destdir)s',
+                    './configure --host=%(mingw_w64)s --disable-shared --prefix=%(destdir)s',
                     'make install']
             },
             'osx-carbon-i386': {
@@ -648,11 +648,12 @@ def _is_compiled(dst, loc):
         present = present and exists(os.path.join(dst, name))
     return present
 
-def build_deplibs(config, basedir):
+def build_deplibs(config, basedir, **kwargs):
     mkdir_p(os.path.join(basedir, config))
 
     dstdir = os.path.join(basedir, config, 'deplibs')
-    vars   = {'destdir': dstdir, 'mingw-w64': MINGW_W64_PREFIX.get(rchop(config, '-dbg'), '')}
+    vars   = {'destdir': dstdir }
+    vars.update(kwargs)
     for lib in sorted(DEPENDENT_LIBS, key=lambda x: DEPENDENT_LIBS[x]['order']):
         cfg = None
         for key in DEPENDENT_LIBS[lib]['build']:
@@ -932,7 +933,7 @@ def check_mingw64_cross(config):
 
 def build_mingw64_cross(config, basedir):
     version, simple_version = get_version(basedir)
-    build_deplibs(config, basedir)
+    build_deplibs(config, basedir, mingw_w64=MINGW_W64_PREFIX.get(rchop(config, '-dbg')))
 
     libdir = os.path.join(basedir, config, 'deplibs')
     qtdir  = os.path.join(basedir, config, 'qt')
