@@ -686,6 +686,19 @@ def build_deplibs(config, basedir, **kwargs):
 
         rmdir(srcdir)
 
+def build_qtmodule(qtdir, name, make_cmd, configure_cmd):
+    module_dir = os.path.join(qtdir, name)
+    configured = ''
+    if exists(os.path.join(qtdir, 'configured')):
+        configured = open(os.path.join(qtdir, 'configured'), 'r').read()
+    if not name in configured or not exists(module_dir):
+        mkdir_p(module_dir)
+        os.chdir(module_dir)
+        shell(configure_cmd)
+        open(os.path.join(qtdir, 'configured'), 'a').write(name+'\n')
+    os.chdir(module_dir)
+    shell(make_cmd)
+
 def check_running_on_debian():
     if not sys.platform.startswith('linux') or not exists('/etc/apt/sources.list'):
         error('This can only be run on a Debian/Ubuntu distribution, aborting.')
@@ -910,12 +923,12 @@ def build_msvc(config, basedir):
         '-L %s\\lib' % libdir,
         'OPENSSL_LIBS="-L%s\\\\lib -lssleay32 -llibeay32 -lUser32 -lAdvapi32 -lGdi32 -lCrypt32"' % libdir.replace('\\', '\\\\'))
 
-    os.chdir(qtdir)
-    if not exists('is_configured'):
-        open('run.bat', 'w').write('set PATH=%s\n%s\\..\\qt\\qtbase\\configure.bat %s' % (os.environ['PATH'], basedir, configure_args))
-        shell('%s\\..\\qt\\qtbase\\configure.bat %s' % (basedir, configure_args))
-        open('is_configured', 'w').write('')
-    shell('nmake')
+    build_qtmodule(qtdir, 'qtbase', 'nmake',
+        '%s\\..\\qt\\qtbase\\configure.bat %s' % (basedir, configure_args))
+    build_qtmodule(qtdir, 'qtsvg',  'nmake',
+        '%s\\qtbase\\bin\\qmake.exe %s\\..\\qt\\qtsvg\\qtsvg.pro' % (qtdir, basedir))
+    build_qtmodule(qtdir, 'qtxmlpatterns', 'nmake',
+        '%s\\qtbase\\bin\\qmake.exe %s\\..\\qt\\qtxmlpatterns\\qtxmlpatterns.pro' % (qtdir, basedir))
 
     appdir = os.path.join(basedir, config, 'app')
     mkdir_p(appdir)
@@ -925,7 +938,7 @@ def build_msvc(config, basedir):
 
     os.environ['WKHTMLTOX_VERSION'] = version
 
-    shell('%s\\bin\\qmake %s\\..\\wkhtmltopdf.pro' % (qtdir, basedir))
+    shell('%s\\qtbase\\bin\\qmake %s\\..\\wkhtmltopdf.pro' % (qtdir, basedir))
     shell('nmake')
 
     makensis = os.path.join(get_registry_value(r'SOFTWARE\NSIS'), 'makensis.exe')
