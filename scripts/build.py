@@ -874,6 +874,10 @@ def check_msvc(config):
     if not perl or 'perl5' not in perl:
         error("perl does not seem to be installed.")
 
+    ruby = get_output('ruby', '--version')
+    if not ruby or 'ruby' not in ruby:
+        error("ruby does not seem to be installed.")
+
     nsis = get_registry_value(r'SOFTWARE\NSIS')
     if not nsis or not exists(os.path.join(nsis, 'makensis.exe')):
         error("NSIS does not seem to be installed.")
@@ -912,6 +916,7 @@ def build_msvc(config, basedir):
     build_deplibs(config, basedir, cygwin=cygwin, cygdest=cygdest)
 
     os.environ['PATH'] = r'%s;%s\..\qt\gnuwin32\bin' % (path, basedir)
+    os.environ['SQLITE3SRCDIR'] = r'%s\..\qt\qtbase\src\3rdparty\sqlite' % basedir
     sha1, url = MSVC_RUNTIME[rchop(config, '-dbg')]
     shutil.copy(download_file(url, sha1, basedir), os.path.join(basedir, config, 'vcredist.exe'))
 
@@ -924,11 +929,13 @@ def build_msvc(config, basedir):
         'OPENSSL_LIBS="-L%s\\\\lib -lssleay32 -llibeay32 -lUser32 -lAdvapi32 -lGdi32 -lCrypt32"' % libdir.replace('\\', '\\\\'))
 
     build_qtmodule(qtdir, 'qtbase', 'nmake',
-        '%s\\..\\qt\\qtbase\\configure.bat %s' % (basedir, configure_args))
+        r'%s\..\qt\qtbase\configure.bat %s' % (basedir, configure_args))
     build_qtmodule(qtdir, 'qtsvg',  'nmake',
-        '%s\\qtbase\\bin\\qmake.exe %s\\..\\qt\\qtsvg\\qtsvg.pro' % (qtdir, basedir))
+        r'%s\qtbase\bin\qmake.exe %s\..\qt\qtsvg\qtsvg.pro' % (qtdir, basedir))
     build_qtmodule(qtdir, 'qtxmlpatterns', 'nmake',
-        '%s\\qtbase\\bin\\qmake.exe %s\\..\\qt\\qtxmlpatterns\\qtxmlpatterns.pro' % (qtdir, basedir))
+        r'%s\qtbase\bin\qmake.exe %s\..\qt\qtxmlpatterns\qtxmlpatterns.pro' % (qtdir, basedir))
+    build_qtmodule(qtdir, 'qtwebkit', 'nmake',
+        r'%s\qtbase\bin\qmake.exe %s\..\qt\qtwebkit\WebKit.pro WEBKIT_CONFIG-=build_webkit2' % (qtdir, basedir))
 
     appdir = os.path.join(basedir, config, 'app')
     mkdir_p(appdir)
